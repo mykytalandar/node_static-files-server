@@ -13,7 +13,6 @@ function sendText(res, status, message) {
 function createServer() {
   /* Write your code here */
   // Return instance of http.Server class
-  const FILE = '/file/';
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -24,39 +23,39 @@ function createServer() {
       return sendText(res, 404, 'Not found');
     }
 
-    if (pathname.includes('../')) {
+    if (pathname.includes('..')) {
       return sendText(res, 400, 'Bad request');
     }
 
-    if (!pathname.startsWith(FILE) || pathname === '/file') {
-      return sendText(res, 200, `Use ${FILE}<path>`);
+    if (!pathname.startsWith('/file/') || pathname === '/file') {
+      return sendText(res, 200, `Use /file/<path>`);
     }
 
-    const fileLength = FILE.length;
+    const filePath = pathname.replace('/file', '') || 'index.html';
+    const realPath = path.join(__dirname, '../public', filePath);
+    const publicDir = path.resolve(__dirname, '../public');
 
-    let requestedPath = pathname.slice(fileLength);
-
-    if (pathname === FILE) {
-      requestedPath = 'index.html';
+    if (!realPath.startsWith(publicDir)) {
+      return sendText(res, 400, 'Bad request');
     }
-
-    const realPath = path.join(__dirname, 'public', requestedPath);
 
     try {
-      const file = await fs.readFile(realPath, 'utf-8');
+      const file = await fs.readFile(realPath);
 
       res.statusCode = 200;
 
       if (realPath.endsWith('.css')) {
         res.setHeader('Content-Type', 'text/css');
-      } else {
+      } else if (realPath.endsWith('.html')) {
         res.setHeader('Content-Type', 'text/html');
+      } else {
+        res.setHeader('Content-Type', 'text/plain');
       }
       res.end(file);
     } catch {
       res.statusCode = 404;
       res.setHeader('Content-Type', 'text/plain');
-      res.end('Not Found');
+      res.end('File not Found');
     }
   });
 
