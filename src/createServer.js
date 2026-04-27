@@ -1,7 +1,7 @@
 'use strict';
 
 const http = require('http');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 
 function sendText(res, status, message) {
@@ -17,18 +17,18 @@ function createServer() {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
-    const pathname = url.pathname; // /file/styles/main.css
+    const { pathname } = url;
 
     if (pathname.includes('//')) {
       return sendText(res, 404, 'Not found');
     }
 
-    if (pathname.includes('..')) {
-      return sendText(res, 400, 'Bad request');
+    if (pathname === '/file') {
+      return sendText(res, 200, `Use /file/<path>`);
     }
 
-    if (!pathname.startsWith('/file/') || pathname === '/file') {
-      return sendText(res, 200, `Use /file/<path>`);
+    if (!pathname.startsWith('/file/')) {
+      return sendText(res, 400, 'Bad request');
     }
 
     const filePath = pathname.replace('/file/', '') || 'index.html';
